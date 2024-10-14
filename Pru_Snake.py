@@ -24,6 +24,9 @@ game_over = False
 game_paused = False
 cat_mode = False  # Variable para saber si se ha activado el modo del gato
 game_speed = 14  # Velocidad inicial del juego
+next_speed_increase_score = 20  # Próximo puntaje donde se aumentará la velocidad
+speed_up_message_time = 0  # Duración para mostrar el mensaje "Speed +"
+speed_up_message_duration = 2000  # Mostrar el mensaje por 2000 milisegundos (2 segundos)
 
 font = pygame.font.SysFont("bahnschrift", 25)
 
@@ -60,7 +63,7 @@ def save_high_score():
 load_high_score()
 
 def reset_game():
-    global x, y, delta_x, delta_y, food_x, food_y, body_list, game_over, score_value, game_paused, cat_mode, food_image, game_speed
+    global x, y, delta_x, delta_y, food_x, food_y, body_list, game_over, score_value, game_paused, cat_mode, food_image, game_speed, next_speed_increase_score, speed_up_message_time
     x, y = 300, 300
     delta_x, delta_y = 50, 0
     food_x, food_y = random.randrange(0, width) // 50 * 50, random.randrange(0, height) // 50 * 50
@@ -71,13 +74,15 @@ def reset_game():
     cat_mode = False
     food_image = cake_image  # Reiniciar la imagen de la comida
     game_speed = 14  # Restablecer la velocidad del juego
+    next_speed_increase_score = 20  # Restablecer el próximo puntaje para aumentar la velocidad
+    speed_up_message_time = 0  # Reiniciar el tiempo del mensaje de velocidad
 
     # Reiniciar la música a la inicial
     pygame.mixer.music.load("Soft.mp3")
     pygame.mixer.music.play(-1)
 
 def snake():
-    global x, y, food_x, food_y, game_over, score_value, game_paused, cat_mode, food_image, high_score, game_speed
+    global x, y, food_x, food_y, game_over, score_value, game_paused, cat_mode, food_image, high_score, game_speed, next_speed_increase_score, speed_up_message_time
     x = (x + delta_x) % width
     y = (y + delta_y) % height
 
@@ -114,6 +119,12 @@ def snake():
             pygame.mixer.music.load("Hunter.mp3")
             pygame.mixer.music.play(-1)  # Reproducir en loop
 
+        # Aumentar la velocidad cada 10 puntos después de los 15 puntos
+        if score_value >= next_speed_increase_score:
+            game_speed += 5  # Aumentar la velocidad en 5
+            next_speed_increase_score += 10  # Actualizar el próximo puntaje para aumentar la velocidad
+            speed_up_message_time = pygame.time.get_ticks()  # Guardar el tiempo actual para mostrar el mensaje
+
     else:
         # Si no hay colisión, se elimina el segmento más antiguo
         del body_list[0]
@@ -137,6 +148,11 @@ def snake():
     # Dibuja la serpiente
     for (i, j) in body_list:
         pygame.draw.rect(game_screen, (255, 255, 255), [i, j, 20, 20])
+
+    # Mostrar el mensaje "Speed +" si está dentro del tiempo permitido
+    if pygame.time.get_ticks() - speed_up_message_time < speed_up_message_duration:
+        speed_msg = font.render("Speed +", True, (255, 0, 0))  # Texto en rojo
+        game_screen.blit(speed_msg, [5, height - 30])  # Parte inferior izquierda
 
     pygame.display.update()
 
@@ -184,7 +200,7 @@ while True:
 
     elif game_paused:
         display_pause_message()
-        time.sleep(5)
+        time.sleep(3)
 
         # Espera a que el jugador presione cualquier tecla para continuar
         for event in pygame.event.get():
