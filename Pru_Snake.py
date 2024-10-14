@@ -37,6 +37,21 @@ cake_image = pygame.transform.scale(cake_image, (50, 50))  # Escalar la imagen a
 cat_image = pygame.image.load("Gato.gif")  # Cargar la imagen del gato
 cat_image = pygame.transform.scale(cat_image, (50, 50))  # Escalar la imagen a 50x50
 
+# Cargar imágenes del ratón (para diferentes direcciones)
+raton_up_image = pygame.image.load("Raton/raton_up.png")
+raton_down_image = pygame.image.load("Raton/raton_down.png")
+raton_left_image = pygame.image.load("Raton/raton_left.png")
+raton_right_image = pygame.image.load("Raton/raton_right.png")
+
+# Escalar las imágenes
+raton_up_image = pygame.transform.scale(raton_up_image, (50, 50))
+raton_down_image = pygame.transform.scale(raton_down_image, (50, 50))
+raton_left_image = pygame.transform.scale(raton_left_image, (50, 50))
+raton_right_image = pygame.transform.scale(raton_right_image, (50, 50))
+
+# Imagen actual de la cabeza de la serpiente
+current_head_image = raton_right_image  # Comienza moviéndose a la derecha
+
 # Imagen de la comida (inicialmente el pastel)
 food_image = cake_image
 
@@ -63,7 +78,7 @@ def save_high_score():
 load_high_score()
 
 def reset_game():
-    global x, y, delta_x, delta_y, food_x, food_y, body_list, game_over, score_value, game_paused, cat_mode, food_image, game_speed, next_speed_increase_score, speed_up_message_time
+    global x, y, delta_x, delta_y, food_x, food_y, body_list, game_over, score_value, game_paused, cat_mode, food_image, game_speed, next_speed_increase_score, speed_up_message_time, current_head_image
     x, y = 300, 300
     delta_x, delta_y = 50, 0
     food_x, food_y = random.randrange(0, width) // 50 * 50, random.randrange(0, height) // 50 * 50
@@ -76,6 +91,7 @@ def reset_game():
     game_speed = 14  # Restablecer la velocidad del juego
     next_speed_increase_score = 20  # Restablecer el próximo puntaje para aumentar la velocidad
     speed_up_message_time = 0  # Reiniciar el tiempo del mensaje de velocidad
+    current_head_image = raton_right_image  # Reiniciar la imagen de la cabeza del ratón
 
     # Reiniciar la música a la inicial
     pygame.mixer.music.load("Soft.mp3")
@@ -98,61 +114,67 @@ def snake():
 
     # Verificar si hay colisión entre la serpiente y la comida
     if snake_rect.colliderect(food_rect):
-        # Mueve la comida a una nueva posición asegurándote de que no esté en el cuerpo de la serpiente
         while True:
             new_food_x, new_food_y = random.randrange(0, width, 50), random.randrange(0, height, 50)
             if (new_food_x, new_food_y) not in body_list:
                 food_x, food_y = new_food_x, new_food_y
                 break
         
-        # Incrementar la puntuación
         score_value += 1
-        
-        # Cambiar a modo gato si la puntuación es 15
+
         if score_value == 15:
             game_paused = True
             cat_mode = True
-            food_image = cat_image  # Cambiar la imagen de la comida al gato
-            game_speed = 30  # Aumentar la velocidad del juego a 30
-            
-            # Cambiar la música a Hunter-mp3
+            food_image = cat_image
+            game_speed = 30
             pygame.mixer.music.load("Hunter.mp3")
-            pygame.mixer.music.play(-1)  # Reproducir en loop
+            pygame.mixer.music.play(-1)
 
-        # Aumentar la velocidad cada 10 puntos después de los 15 puntos
         if score_value >= next_speed_increase_score:
-            game_speed += 5  # Aumentar la velocidad en 5
-            next_speed_increase_score += 10  # Actualizar el próximo puntaje para aumentar la velocidad
-            speed_up_message_time = pygame.time.get_ticks()  # Guardar el tiempo actual para mostrar el mensaje
+            game_speed += 5
+            next_speed_increase_score += 10
+            speed_up_message_time = pygame.time.get_ticks()
 
     else:
-        # Si no hay colisión, se elimina el segmento más antiguo
         del body_list[0]
 
     game_screen.fill((0, 0, 0))
 
-    # Verificar si se ha superado el puntaje más alto
     if score_value > high_score:
         high_score = score_value
-        save_high_score()  # Guardar el nuevo puntaje más alto
+        save_high_score()
 
-    # Mostrar puntaje actual y puntaje más alto
     score = font.render(f"Score: {score_value}", True, (255, 255, 0))
     high_score_text = font.render(f"High Score: {high_score}", True, (255, 255, 0))
     game_screen.blit(score, [5, 5])
     game_screen.blit(high_score_text, [5, 35])
 
-    # Dibuja la imagen de la comida
     game_screen.blit(food_image, (food_x, food_y))
 
-    # Dibuja la serpiente
-    for (i, j) in body_list:
-        pygame.draw.rect(game_screen, (255, 255, 255), [i, j, 20, 20])
+    # Dibuja el cuerpo de la serpiente (excluyendo la cabeza)
+    for segment in body_list[:-1]:
+        pygame.draw.rect(game_screen, (255, 255, 255), [segment[0], segment[1], 20, 20])
+
+    # Ajustar la posición de la imagen de la cabeza según la dirección
+    if current_head_image == raton_left_image:
+        head_x = x - 20
+        head_y = y - 20
+        game_screen.blit(current_head_image, (head_x, head_y))
+    
+    elif current_head_image == raton_right_image:
+        head_x = x - 20
+        head_y = y - 20
+        game_screen.blit(current_head_image, (head_x, head_y))
+
+    elif current_head_image == raton_up_image or current_head_image == raton_down_image:
+        head_x = x - 15
+        head_y = y - 20
+        game_screen.blit(current_head_image, (head_x, head_y))
 
     # Mostrar el mensaje "Speed +" si está dentro del tiempo permitido
     if pygame.time.get_ticks() - speed_up_message_time < speed_up_message_duration:
-        speed_msg = font.render("Speed +", True, (255, 0, 0))  # Texto en rojo
-        game_screen.blit(speed_msg, [5, height - 30])  # Parte inferior izquierda
+        speed_msg = font.render("Speed +", True, (255, 0, 0))
+        game_screen.blit(speed_msg, [5, height - 30])
 
     pygame.display.update()
 
@@ -220,19 +242,23 @@ while True:
                 if event.key == pygame.K_LEFT:
                     if delta_x != 20:
                         delta_x = -20
+                        current_head_image = raton_left_image  # Cambiar la cabeza del ratón
                     delta_y = 0
                 elif event.key == pygame.K_RIGHT:
                     if delta_x != -20:
                         delta_x = 20
+                        current_head_image = raton_right_image  # Cambiar la cabeza del ratón
                     delta_y = 0
                 elif event.key == pygame.K_UP:
                     delta_x = 0
                     if delta_y != 20:
                         delta_y = -20
+                        current_head_image = raton_up_image  # Cambiar la cabeza del ratón
                 elif event.key == pygame.K_DOWN:
                     delta_x = 0
                     if delta_y != -20:
                         delta_y = 20
+                        current_head_image = raton_down_image  # Cambiar la cabeza del ratón
                 else:
                     continue
                 snake()
