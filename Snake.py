@@ -23,6 +23,7 @@ clock = pygame.time.Clock()
 game_over = False
 game_paused = False
 cat_mode = False  # Variable para saber si se ha activado el modo del gato
+game_speed = 14  # Velocidad inicial del juego
 
 font = pygame.font.SysFont("bahnschrift", 25)
 
@@ -59,7 +60,7 @@ def save_high_score():
 load_high_score()
 
 def reset_game():
-    global x, y, delta_x, delta_y, food_x, food_y, body_list, game_over, score_value, game_paused, cat_mode, food_image
+    global x, y, delta_x, delta_y, food_x, food_y, body_list, game_over, score_value, game_paused, cat_mode, food_image, game_speed
     x, y = 300, 300
     delta_x, delta_y = 50, 0
     food_x, food_y = random.randrange(0, width) // 50 * 50, random.randrange(0, height) // 50 * 50
@@ -69,13 +70,14 @@ def reset_game():
     game_paused = False
     cat_mode = False
     food_image = cake_image  # Reiniciar la imagen de la comida
+    game_speed = 14  # Restablecer la velocidad del juego
 
     # Reiniciar la música a la inicial
     pygame.mixer.music.load("Soft.mp3")
     pygame.mixer.music.play(-1)
 
 def snake():
-    global x, y, food_x, food_y, game_over, score_value, game_paused, cat_mode, food_image, high_score
+    global x, y, food_x, food_y, game_over, score_value, game_paused, cat_mode, food_image, high_score, game_speed
     x = (x + delta_x) % width
     y = (y + delta_y) % height
 
@@ -106,6 +108,7 @@ def snake():
             game_paused = True
             cat_mode = True
             food_image = cat_image  # Cambiar la imagen de la comida al gato
+            game_speed = 30  # Aumentar la velocidad del juego a 30
             
             # Cambiar la música a Hunter-mp3
             pygame.mixer.music.load("Hunter.mp3")
@@ -181,6 +184,7 @@ while True:
 
     elif game_paused:
         display_pause_message()
+        time.sleep(5)
 
         # Espera a que el jugador presione cualquier tecla para continuar
         for event in pygame.event.get():
@@ -218,4 +222,4 @@ while True:
                 snake()
         if not events:
             snake()
-        clock.tick(14)
+        clock.tick(game_speed)
